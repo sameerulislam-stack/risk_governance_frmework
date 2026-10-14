@@ -1,0 +1,6 @@
+fastapi
+jinja2
+openpyxl
+pandas
+python-multipart
+uvicorn

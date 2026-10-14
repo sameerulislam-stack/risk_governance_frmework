@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="relative min-h-screen bg-gray-50">
+    <nav class="bg-[#C8102E] p-4 text-white flex justify-between items-center">
+        <h1 class="text-xl font-bold">{{ category }}</h1>
+        <a href="/" class="bg-white text-[#C8102E] px-4 py-2 rounded font-bold text-sm">GO TO MAIN PAGE</a>
+    </nav>
+    <main class="p-8"><div class="bg-white shadow rounded-lg p-6">
+        <table class="w-full text-left">
+            <thead><tr class="border-b text-[#8C8C8C]"><th class="pb-3">Metric</th><th class="pb-3">Value</th></tr></thead>
+            <tbody>{% for row in data %}<tr class="border-b"><td class="py-4">{{ row[0] }}</td><td class="py-4 font-mono">{{ row[1] }}</td></tr>{% endfor %}</tbody>
+        </table>
+    </div></main>
+    <div class="pointer-events-none fixed inset-0 z-10 flex items-center justify-center px-6 text-center" role="img" aria-label="Coming Soon. Reports are under Development.">
+        <p class="-rotate-12 text-5xl font-black uppercase leading-tight text-[#C8102E]/20 sm:text-7xl">
+            Coming Soon
+            <span class="mt-3 block text-2xl sm:text-4xl">Reports are under Development</span>
+        </p>
+    </div>
+</body>
+</html>

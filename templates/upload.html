@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-100 p-10">
+    <div class="max-w-3xl mx-auto space-y-8">
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold text-[#C8102E] mb-6">Risk Data Uploads</h1>
+        <form action="/api/upload" method="post" enctype="multipart/form-data" class="space-y-4">
+            <h2 class="text-lg font-bold text-gray-800">Portfolio risk workbooks</h2>
+            <label class="block text-sm font-bold">1. Master Feed (W1):</label>
+            <input type="file" name="w1" required class="w-full border p-2">
+            <label class="block text-sm font-bold">2. Risk Blueprint (W2):</label>
+            <input type="file" name="w2" required class="w-full border p-2">
+            <label class="block text-sm font-bold">3. Portfolio Holdings (W3):</label>
+            <input type="file" name="w3" required class="w-full border p-2">
+            <input type="date" name="data_date" required class="w-full border p-2">
+            <button type="submit" class="w-full bg-[#1E7B34] text-white py-2 rounded font-bold">Process All Workbooks</button>
+        </form>
+      </div>
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h2 class="text-xl font-bold text-[#C8102E] mb-2">Trade Monitoring workbook</h2>
+        <p class="text-sm text-gray-600 mb-5">Upload an Excel workbook with a “Trade Risk Analysis” sheet. Other sheets are ignored.</p>
+        <form action="/api/upload/trade-monitoring" method="post" enctype="multipart/form-data" class="space-y-4">
+            <label class="block text-sm font-bold" for="trade-workbook">Trade Risk Analysis workbook (.xlsx):</label>
+            <input id="trade-workbook" type="file" name="trade_workbook" accept=".xlsx,.xlsm" required class="w-full border p-2">
+            <button type="submit" class="w-full bg-[#C8102E] text-white py-2 rounded font-bold">Upload Trade Monitoring Data</button>
+        </form>
+      </div>
+      <a href="/dashboard.html" class="block text-center text-[#600816] font-bold">Back to Dashboard</a>
+    </div>
+</body>
+</html>

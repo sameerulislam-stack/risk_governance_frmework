@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-100">
+    <nav class="bg-[#C8102E] p-6 text-white shadow-lg"><h1 class="text-2xl font-bold">JLI RISK GOVERNANCE FRAMEWORK</h1></nav>
+    <main class="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+        {% for category, items in structure.items() %}
+        <div class="bg-white p-6 rounded-lg border-t-8 border-[#C8102E] shadow-xl">
+            <h2 class="font-bold text-[#600816] mb-6 uppercase border-b-2 border-gray-100 pb-4">{{ category }}</h2>
+            <div class="space-y-4">
+                {% for item in items %}
+                <a href="{% if item == 'MONITORING OF  EQUITY PORTFOLIO RISK PARAMETERS' %}/report/market-&-liquidity-risk/equity-risk-parameters{% elif item == 'TRADE MONITORING' %}/report/trade-monitoring{% else %}/report/{{ category|lower|replace(' ', '-') }}{% endif %}"
+                   class="block p-4 bg-gray-50 hover:bg-[#F9C9D1] rounded-lg transition border border-gray-200 hover:border-[#C8102E] text-sm font-semibold text-[#3D3D3D]">
+                   {{ item }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </main>
+    <a href="/upload" class="fixed bottom-8 right-8 bg-[#1E7B34] hover:bg-[#165a25] text-white p-4 rounded-full shadow-2xl transition-all transform hover:scale-110 z-50">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+    </a>
+</body>
+</html>

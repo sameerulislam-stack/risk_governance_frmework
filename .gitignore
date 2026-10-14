@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv*/
+
+# Local configuration and application data
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.xlsx
+fund_mapping.csv
+workbook_blueprint.json
+
+# Generated builds and releases
+build/
+dist/
+release/
+
+# Editor and operating system files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

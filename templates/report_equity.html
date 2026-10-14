@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <title>Monitoring of Equity Portfolio Risk Parameters</title>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <nav class="bg-[#C8102E] p-4 text-white flex justify-between items-center shadow-md">
+        <h1 class="text-xl font-bold">Monitoring of Equity Portfolio Risk Parameters</h1>
+        <div class="space-x-2">
+            <a href="/dashboard.html" class="bg-white text-[#C8102E] px-4 py-2 rounded font-bold text-sm">GO BACK</a>
+            <button onclick="window.print()" class="bg-[#1E7B34] text-white px-4 py-2 rounded font-bold text-sm">DOWNLOAD</button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+        <section class="bg-white shadow rounded-lg p-4 space-y-4">
+            <div class="flex flex-wrap gap-2 items-center">
+                <span class="font-bold text-sm">Instrument Type</span>
+                <span class="rounded bg-gray-100 px-3 py-2 text-sm font-semibold">Equity</span>
+                <span class="ml-2 font-bold text-sm">Portfolio</span>
+            </div>
+            <div id="fundButtons" class="flex flex-wrap gap-2" role="group" aria-label="Choose portfolio">
+                {% for fund in funds %}
+                <button
+                    type="button"
+                    class="fund-button rounded border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#C8102E] hover:text-[#C8102E]"
+                    data-fund="{{ fund }}"
+                    aria-pressed="false"
+                >{{ fund }}</button>
+                {% endfor %}
+            </div>
+            {% if not funds %}
+            <p class="text-sm text-amber-700">The equity portfolio buttons are unavailable.</p>
+            {% endif %}
+            <p class="text-xs text-gray-500">Consolidated combines the six individual portfolios listed above.</p>
+            <div class="flex flex-wrap gap-2 items-center" role="group" aria-label="Report time period">
+                <span class="mr-1 font-bold text-sm">Period</span>
+                {% for value, label in [
+                    ("1d", "Day"),
+                    ("1w", "Weekly"),
+                    ("1m", "Monthly"),
+                    ("3m", "Quarterly")
+                ] %}
+                <button
+                    type="button"
+                    class="period-button rounded border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:border-[#C8102E] hover:text-[#C8102E]"
+                    data-period="{{ value }}"
+                    aria-pressed="false"
+                >{{ label }}</button>
+                {% endfor %}
+            </div>
+            <div id="monthlyPeriodPicker" class="hidden items-center gap-2">
+                <label for="reportMonth" class="text-sm font-semibold text-gray-700">Month and year</label>
+                <input
+                    id="reportMonth"
+                    type="month"
+                    class="rounded border border-gray-300 px-3 py-2 text-sm"
+                    aria-label="Choose report month and year"
+                >
+            </div>
+            <p id="reportStatus" class="text-sm text-gray-500" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="summaryCards" class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3" aria-label="Portfolio risk summary">
+            {% for id, label in [
+                ("marketValue", "Market Value"),
+                ("marketVolatility", "Market Volatility"),
+                ("portfolioVolatility", "Portfolio Volatility"),
+                ("portfolioAlpha", "Alpha"),
+                ("portfolioBeta", "Beta"),
+                ("portfolioSharpe", "Portfolio Sharpe"),
+                ("marketSharpe", "Market Sharpe")
+            ] %}
+            <article class="bg-white shadow rounded-lg p-4 min-w-0">
+                <p class="text-xs uppercase tracking-wide text-gray-500">{{ label }}</p>
+                <p id="{{ id }}" class="mt-2 text-xl font-bold text-gray-800">—</p>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-3" aria-label="Value at Risk">
+            {% for id, label in [
+                ("marketVar99", "Market VaR · 99%"),
+                ("portfolioVar95", "Portfolio 1-day VaR · 95%"),
+                ("portfolioVar99", "Portfolio 1-day VaR · 99%"),
+                ("daysToLiquidate", "Days to Liquidate")
+            ] %}
+            <article class="bg-white shadow rounded-lg p-4">
+                <p class="text-xs uppercase tracking-wide text-gray-500">{{ label }}</p>
+                <p id="{{ id }}" class="mt-2 text-xl font-bold text-gray-800">—</p>
+            </article>
+            {% endfor %}
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <article class="bg-white shadow rounded-lg p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h2 class="text-lg font-bold text-[#C8102E]">Liquidity Basket</h2>
+                    <a class="chart-download rounded border border-[#C8102E] px-3 py-1.5 text-xs font-bold text-[#C8102E] hover:bg-rose-50" data-chart="liquidity" href="#" download aria-disabled="true" tabindex="-1">Download Excel</a>
+                </div>
+                <p class="text-sm text-gray-500">Market value distribution across classified liquidity baskets.</p>
+                <div id="liquidityChart" class="mt-3 min-h-80" aria-label="Liquidity basket pie chart"></div>
+            </article>
+
+            <article class="bg-white shadow rounded-lg p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h2 class="text-lg font-bold text-[#C8102E]">Portfolio vs. Market Volatility</h2>
+                    <a class="chart-download rounded border border-[#C8102E] px-3 py-1.5 text-xs font-bold text-[#C8102E] hover:bg-rose-50" data-chart="volatility" href="#" download aria-disabled="true" tabindex="-1">Download Excel</a>
+                </div>
+                <div id="volatilityChart" class="mt-3 min-h-80" aria-label="Portfolio and market volatility line chart"></div>
+            </article>
+
+            <article class="bg-white shadow rounded-lg p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h2 class="text-lg font-bold text-[#C8102E]">Portfolio vs. Market Sharpe</h2>
+                    <a class="chart-download rounded border border-[#C8102E] px-3 py-1.5 text-xs font-bold text-[#C8102E] hover:bg-rose-50" data-chart="sharpe" href="#" download aria-disabled="true" tabindex="-1">Download Excel</a>
+                </div>
+                <div id="sharpeChart" class="mt-3 min-h-80" aria-label="Portfolio and market Sharpe line chart"></div>
+            </article>
+
+            <article class="bg-white shadow rounded-lg p-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <h2 class="text-lg font-bold text-[#C8102E]">Constituent Risk Distribution</h2>
+                    <a class="chart-download rounded border border-[#C8102E] px-3 py-1.5 text-xs font-bold text-[#C8102E] hover:bg-rose-50" data-chart="distribution" href="#" download aria-disabled="true" tabindex="-1">Download Excel</a>
+                </div>
+                <p class="text-sm text-gray-500">Volatility distribution across held symbols.</p>
+                <div id="distributionChart" class="mt-3 min-h-80" aria-label="Constituent volatility distribution histogram"></div>
+            </article>
+        </section>
+
+        <section class="bg-white shadow rounded-lg p-5">
+            <h2 class="text-lg font-bold text-[#C8102E]">Portfolio Holdings & Risk</h2>
+            <p class="text-sm text-gray-500">Portfolio holdings and risk metrics.</p>
+            <div class="mt-4 overflow-x-auto">
+                <table class="min-w-full text-sm text-left">
+                    <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+                        <tr>
+                            <th class="px-3 py-3">Ticker</th><th class="px-3 py-3">Sector</th>
+                            <th class="px-3 py-3">Market Value</th><th class="px-3 py-3">Risk Level</th>
+                            <th class="px-3 py-3">Weight</th><th class="px-3 py-3">Scrip Volatility</th>
+                            <th class="px-3 py-3">Market Cap</th><th class="px-3 py-3">Beta</th>
+                            <th class="px-3 py-3">Alpha</th><th class="px-3 py-3">Sharpe</th>
+                            <th class="px-3 py-3">Free Float</th><th class="px-3 py-3">Liquidity Basket</th>
+                            <th class="px-3 py-3">Days to Liquidate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdingsTableBody" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <a href="/upload" class="fixed bottom-8 right-8 bg-[#1E7B34] hover:bg-[#165a25] text-white p-4 rounded-full shadow-2xl z-50" aria-label="Upload workbooks">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+    </a>
+
+    <script>
+        const chartInstances = {};
+        const fundButtons = Array.from(document.querySelectorAll(".fund-button"));
+        const periodButtons = Array.from(document.querySelectorAll(".period-button"));
+        const reportStatus = document.getElementById("reportStatus");
+        const monthlyPeriodPicker = document.getElementById("monthlyPeriodPicker");
+        const reportMonth = document.getElementById("reportMonth");
+        let requestNumber = 0;
+        const currencyFormat = new Intl.NumberFormat("en-PK", { maximumFractionDigits: 0 });
+        let selectedPeriod = "1d";
+        let selectedMonth = "";
+        let reportAsOfMonth = "";
+
+        const periodLabels = {
+            "1d": "Day",
+            "1w": "Weekly",
+            "1m": "Monthly",
+            "3m": "Quarterly"
+        };
+
+        function formatted(value, style) {
+            if (value === null || value === undefined || !Number.isFinite(Number(value))) return "—";
+            const number = Number(value);
+            if (style === "currency") {
+                const magnitude = Math.abs(number);
+                const units = [
+                    [1e12, "tn"],
+                    [1e9, "bn"],
+                    [1e6, "mn"],
+                    [1e3, "k"]
+                ];
+                const unit = units.find(([threshold]) => magnitude >= threshold);
+                if (!unit) return `PKR ${currencyFormat.format(number)}`;
+                const amount = (number / unit[0]).toFixed(1).replace(/\.0$/, "");
+                return `PKR ${amount}${unit[1]}`;
+            }
+            if (style === "percent") return `${(number * 100).toFixed(2)}%`;
+            if (style === "days") return `${number.toFixed(1)} days`;
+            return number.toFixed(2);
+        }
+
+        function setSummary(summary) {
+            const fields = [
+                ["marketValue", "market_value", "currency"],
+                ["marketVolatility", "market_volatility", "percent"],
+                ["portfolioVolatility", "portfolio_volatility", "percent"],
+                ["portfolioAlpha", "alpha", "percent"],
+                ["portfolioBeta", "beta", "ratio"],
+                ["portfolioSharpe", "portfolio_sharpe", "ratio"],
+                ["marketSharpe", "market_sharpe", "ratio"],
+                ["marketVar99", "market_var_99", "percent"],
+                ["portfolioVar95", "portfolio_var_95", "percent"],
+                ["portfolioVar99", "portfolio_var_99", "percent"],
+                ["daysToLiquidate", "days_to_liquidate", "days"]
+            ];
+            fields.forEach(([elementId, key, style]) => {
+                document.getElementById(elementId).textContent = formatted(summary[key], style);
+            });
+        }
+
+        function renderHoldings(rows) {
+            const body = document.getElementById("holdingsTableBody");
+            body.replaceChildren();
+            const columns = [
+                ["symbol", "text"], ["sector", "text"], ["market_value", "currency"],
+                ["risk_level", "text"], ["weight", "percent"], ["volatility", "percent"],
+                ["market_cap_band", "text"], ["beta", "ratio"], ["alpha", "percent"],
+                ["sharpe", "ratio"], ["free_float_pct", "percent"],
+                ["liquidity_basket", "text"], ["days_to_liquidate", "days"]
+            ];
+            rows.forEach(row => {
+                const tr = document.createElement("tr");
+                columns.forEach(([key, style]) => {
+                    const td = document.createElement("td");
+                    td.className = "px-3 py-3 whitespace-nowrap";
+                    td.textContent = style === "text"
+                        ? (row[key] || "—")
+                        : formatted(row[key], style);
+                    tr.appendChild(td);
+                });
+                body.appendChild(tr);
+            });
+            if (!rows.length) {
+                const tr = document.createElement("tr");
+                const td = document.createElement("td");
+                td.colSpan = columns.length;
+                td.className = "px-3 py-8 text-center text-gray-500";
+                td.textContent = "No holdings are available for this portfolio.";
+                tr.appendChild(td);
+                body.appendChild(tr);
+            }
+        }
+
+        function showChartMessage(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = "";
+            const notice = document.createElement("p");
+            notice.className = "text-center text-gray-500 py-16";
+            notice.textContent = message;
+            element.appendChild(notice);
+        }
+
+        function replaceChart(name, elementId, options, emptyMessage) {
+            const element = document.getElementById(elementId);
+            if (chartInstances[name]) {
+                chartInstances[name].destroy();
+                delete chartInstances[name];
+            }
+            if (!options) {
+                showChartMessage(elementId, emptyMessage);
+                return;
+            }
+            element.innerHTML = "";
+            chartInstances[name] = new ApexCharts(element, options);
+            chartInstances[name].render();
+        }
+
+        function lineOptions(series, percentAxis) {
+            return {
+                chart: { type: "line", height: 320, toolbar: { show: true }, zoom: { enabled: true } },
+                series,
+                colors: ["#C8102E", "#1E7B34"],
+                stroke: { curve: "straight", width: 2 },
+                dataLabels: { enabled: false },
+                xaxis: { type: "datetime", labels: { datetimeUTC: false } },
+                yaxis: {
+                    labels: {
+                        formatter: value => percentAxis ? `${(value * 100).toFixed(1)}%` : value.toFixed(2)
+                    }
+                },
+                tooltip: {
+                    x: { format: "dd MMM yyyy" },
+                    y: { formatter: value => percentAxis ? `${(value * 100).toFixed(2)}%` : value.toFixed(3) }
+                },
+                legend: { position: "top" },
+                noData: { text: "No risk history available." }
+            };
+        }
+
+        function makeHistogram(values) {
+            if (!values.length) return null;
+            const sorted = values.map(item => item.volatility * 100).sort((a, b) => a - b);
+            const min = sorted[0];
+            const max = sorted[sorted.length - 1];
+            const binCount = Math.min(12, Math.max(1, Math.ceil(Math.sqrt(sorted.length))));
+            const width = max === min ? Math.max(Math.abs(min) * 0.1, 0.01) : (max - min) / binCount;
+            const bins = Array.from({ length: binCount }, (_, index) => ({
+                lower: min + index * width,
+                upper: min + (index + 1) * width,
+                count: 0
+            }));
+            sorted.forEach(value => {
+                const index = Math.min(binCount - 1, Math.floor((value - min) / width));
+                bins[index].count += 1;
+            });
+            return {
+                chart: { type: "bar", height: 320, toolbar: { show: false } },
+                series: [{ name: "Symbols", data: bins.map(bin => bin.count) }],
+                colors: ["#C8102E"],
+                plotOptions: { bar: { columnWidth: "95%" } },
+                dataLabels: { enabled: false },
+                xaxis: {
+                    categories: bins.map(bin => `${bin.lower.toFixed(1)}-${bin.upper.toFixed(1)}%`),
+                    title: { text: "Annualized volatility" },
+                    labels: { rotate: -35 }
+                },
+                yaxis: { min: 0, forceNiceScale: true, title: { text: "Number of symbols" } },
+                tooltip: { y: { formatter: value => `${value} symbol${value === 1 ? "" : "s"}` } }
+            };
+        }
+
+        function updateChartDownloadLinks(fund) {
+            document.querySelectorAll(".chart-download").forEach(link => {
+                const chart = link.dataset.chart;
+                const params = new URLSearchParams({ period: selectedPeriod });
+                if (selectedPeriod === "1m" && selectedMonth) {
+                    params.set("month", selectedMonth);
+                }
+                link.href = `/api/equity-report/${encodeURIComponent(fund)}/export/${chart}?${params}`;
+                link.setAttribute("aria-disabled", "false");
+                link.removeAttribute("tabindex");
+            });
+        }
+
+        function renderReport(data, fund) {
+            setSummary(data.summary);
+            renderHoldings(data.holdings);
+            updateChartDownloadLinks(fund);
+            const liquidity = data.liquidity_basket.filter(item => Number(item.value) > 0);
+            replaceChart("liquidity", "liquidityChart", liquidity.length ? {
+                chart: { type: "pie", height: 320 },
+                series: liquidity.map(item => Number(item.value)),
+                labels: liquidity.map(item => item.category),
+                colors: ["#1E7B34", "#60A5FA", "#F59E0B", "#C8102E", "#4B5563", "#A855F7", "#64748B"],
+                legend: { position: "bottom" },
+                dataLabels: { enabled: true, formatter: value => `${value.toFixed(1)}%` },
+                tooltip: {
+                    y: {
+                        formatter: (value, context) => {
+                            const total = context.w.globals.seriesTotals.reduce((sum, item) => sum + item, 0);
+                            const share = total ? (value / total) * 100 : 0;
+                            const category = liquidity[context.seriesIndex];
+                            const days = category.average_days_to_liquidate;
+                            return `${formatted(value, "currency")} · ${share.toFixed(1)}% of basket`
+                                + (days === null ? " · no trading volume" : ` · ${Number(days).toFixed(1)} avg days to liquidate`);
+                        }
+                    }
+                }
+            } : null, "Liquidity basket data is not available for this fund. Reprocess the uploaded workbooks to load current holdings.");
+
+            const metrics = data.risk_metrics;
+            const dateSeries = (key, name) => ({
+                name,
+                data: metrics.map(item => [new Date(`${item.date}T00:00:00`).getTime(), Number(item[key])])
+            });
+            replaceChart("volatility", "volatilityChart", metrics.length ? lineOptions([
+                dateSeries("portfolio_volatility", "Portfolio"),
+                dateSeries("market_volatility", "Market")
+            ], true) : null, "No volatility data is available.");
+            replaceChart("sharpe", "sharpeChart", metrics.length ? lineOptions([
+                dateSeries("portfolio_sharpe", "Portfolio"),
+                dateSeries("market_sharpe", "Market")
+            ], false) : null, "No Sharpe data is available.");
+            replaceChart(
+                "distribution",
+                "distributionChart",
+                makeHistogram(data.security_volatility),
+                "No constituent volatility scores are available for this fund."
+            );
+        }
+
+        async function loadReport(fund) {
+            const activeRequest = ++requestNumber;
+            document.querySelectorAll(".chart-download").forEach(link => {
+                link.setAttribute("aria-disabled", "true");
+                link.setAttribute("tabindex", "-1");
+            });
+            reportStatus.textContent = `Loading ${fund} equity portfolio (${periodLabels[selectedPeriod].toLowerCase()})...`;
+            try {
+                const params = new URLSearchParams({ period: selectedPeriod });
+                if (selectedPeriod === "1m") {
+                    selectedMonth = reportMonth.value || selectedMonth || reportAsOfMonth;
+                    if (selectedMonth) params.set("month", selectedMonth);
+                }
+                const response = await fetch(
+                    `/api/equity-report/${encodeURIComponent(fund)}?${params}`
+                );
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || "Unable to load the equity risk report.");
+                if (activeRequest !== requestNumber) return;
+                if (!reportAsOfMonth) reportAsOfMonth = data.as_of_date.slice(0, 7);
+                if (data.selected_month) {
+                    selectedMonth = data.selected_month;
+                    reportMonth.value = selectedMonth;
+                } else if (!reportMonth.value) {
+                    reportMonth.value = reportAsOfMonth;
+                }
+                renderReport(data, fund);
+                reportStatus.textContent = `${periodLabels[data.period]} view: ${data.period_start} to ${data.period_end}.`;
+            } catch (error) {
+                if (activeRequest !== requestNumber) return;
+                ["liquidityChart", "volatilityChart", "sharpeChart", "distributionChart"].forEach(
+                    id => showChartMessage(id, error.message)
+                );
+                setSummary({});
+                renderHoldings([]);
+                reportStatus.textContent = error.message;
+            }
+        }
+
+        document.querySelectorAll(".chart-download").forEach(link => {
+            link.addEventListener("click", event => {
+                if (link.getAttribute("aria-disabled") === "true") event.preventDefault();
+            });
+        });
+
+        function selectFund(button) {
+            fundButtons.forEach(fundButton => {
+                const selected = fundButton === button;
+                fundButton.setAttribute("aria-pressed", String(selected));
+                fundButton.classList.toggle("border-[#C8102E]", selected);
+                fundButton.classList.toggle("bg-[#C8102E]", selected);
+                fundButton.classList.toggle("text-white", selected);
+                fundButton.classList.toggle("border-gray-300", !selected);
+                fundButton.classList.toggle("bg-white", !selected);
+                fundButton.classList.toggle("text-gray-700", !selected);
+            });
+            loadReport(button.dataset.fund);
+        }
+
+        function selectPeriod(button) {
+            selectedPeriod = button.dataset.period;
+            monthlyPeriodPicker.classList.toggle("hidden", selectedPeriod !== "1m");
+            monthlyPeriodPicker.classList.toggle("flex", selectedPeriod === "1m");
+            if (selectedPeriod === "1m" && !reportMonth.value) {
+                reportMonth.value = selectedMonth || reportAsOfMonth;
+            }
+            periodButtons.forEach(periodButton => {
+                const selected = periodButton === button;
+                periodButton.setAttribute("aria-pressed", String(selected));
+                periodButton.classList.toggle("border-[#C8102E]", selected);
+                periodButton.classList.toggle("bg-[#C8102E]", selected);
+                periodButton.classList.toggle("text-white", selected);
+                periodButton.classList.toggle("border-gray-300", !selected);
+                periodButton.classList.toggle("bg-white", !selected);
+                periodButton.classList.toggle("text-gray-700", !selected);
+            });
+            const activeFund = fundButtons.find(button => button.getAttribute("aria-pressed") === "true");
+            if (activeFund) loadReport(activeFund.dataset.fund);
+        }
+
+        fundButtons.forEach(button => {
+            button.addEventListener("click", () => selectFund(button));
+        });
+        periodButtons.forEach(button => {
+            button.addEventListener("click", () => selectPeriod(button));
+        });
+        reportMonth.addEventListener("change", () => {
+            selectedMonth = reportMonth.value;
+            const activeFund = fundButtons.find(button => button.getAttribute("aria-pressed") === "true");
+            if (selectedPeriod === "1m" && activeFund && selectedMonth) {
+                loadReport(activeFund.dataset.fund);
+            }
+        });
+        const defaultPeriod = periodButtons.find(button => button.dataset.period === selectedPeriod);
+        if (defaultPeriod) selectPeriod(defaultPeriod);
+        if (fundButtons.length) selectFund(fundButtons[0]);
+        else reportStatus.textContent = "Equity portfolios are unavailable.";
+    </script>
+</body>
+</html>

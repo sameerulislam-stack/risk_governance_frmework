@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trade Monitoring | JLI Risk Governance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { color-scheme: light; }
+        body { font-family: Arial, sans-serif; }
+        .mode-button, .tab-button { transition: background-color .15s, color .15s, border-color .15s; }
+        .mode-button[aria-pressed="true"] { background: #c8102e; color: white; border-color: #c8102e; }
+        .tab-button[aria-selected="true"] { color: #c8102e; border-color: #c8102e; }
+        .metric-card { min-height: 126px; }
+        .report-table th { position: sticky; top: 0; z-index: 1; }
+        .report-table th, .report-table td { white-space: nowrap; }
+        .liquidity-donut {
+            background: conic-gradient(#0f766e 0% 0%, #d97706 0% 0%, #be123c 0% 0%);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-800">
+    <header class="bg-[#C8102E] text-white shadow-md">
+        <div class="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-5 py-4">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[.22em] text-rose-100">Jubilee Life Insurance</p>
+                <h1 class="mt-1 text-2xl font-bold">Trade Monitoring</h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="/dashboard.html" class="rounded-md border border-white/60 px-4 py-2 text-sm font-bold hover:bg-white hover:text-[#C8102E]">Dashboard</a>
+                <a href="/upload" class="rounded-md bg-white px-4 py-2 text-sm font-bold text-[#C8102E] hover:bg-rose-100">Upload data</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-screen-2xl space-y-5 px-4 py-6 sm:px-6">
+        <section class="rounded-xl bg-white p-4 shadow-sm sm:p-5" aria-label="Reporting period">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-sm font-bold uppercase tracking-wide text-slate-500">Select report</h2>
+                    <p class="mt-1 text-sm text-slate-500">Choose the IMC date range or the calendar-year view.</p>
+                </div>
+                <div class="flex gap-2" role="group" aria-label="Report mode">
+                    <button id="mode-imc" type="button" class="mode-button rounded-md border border-slate-300 px-6 py-2.5 font-bold" aria-pressed="true">IMC</button>
+                    <button id="mode-cy" type="button" class="mode-button rounded-md border border-slate-300 px-6 py-2.5 font-bold" aria-pressed="false">CY-2026</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="imc-date-panel" class="rounded-xl bg-white p-4 shadow-sm sm:p-5">
+            <form id="date-filter" class="flex flex-wrap items-end gap-3">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">From</span>
+                    <input id="from-date" type="date" class="rounded-md border border-slate-300 px-3 py-2">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">To</span>
+                    <input id="to-date" type="date" class="rounded-md border border-slate-300 px-3 py-2">
+                </label>
+                <button type="submit" class="rounded-md bg-[#C8102E] px-5 py-2 font-bold text-white hover:bg-[#a00d25]">Apply date range</button>
+                <p class="text-sm text-slate-500">The selected dates are applied to Overview and Summary.</p>
+            </form>
+        </section>
+
+        <nav id="report-tabs" class="flex gap-6 border-b border-slate-300 px-2" role="tablist" aria-label="Trade Monitoring report sections">
+            <button type="button" class="tab-button border-b-2 border-transparent px-2 py-3 text-sm font-bold" data-tab="parameters" role="tab" aria-selected="false">PARAMETERS</button>
+            <button type="button" class="tab-button border-b-2 border-transparent px-2 py-3 text-sm font-bold" data-tab="overview" role="tab" aria-selected="true">OVERVIEW</button>
+            <button type="button" class="tab-button border-b-2 border-transparent px-2 py-3 text-sm font-bold" data-tab="summary" role="tab" aria-selected="false">SUMMARY</button>
+        </nav>
+
+        <div id="report-status" class="min-h-5 text-sm text-slate-600" role="status" aria-live="polite"></div>
+
+        <section id="parameters-panel" class="hidden space-y-5 rounded-xl bg-white p-5 shadow-sm sm:p-7" role="tabpanel">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[.18em] text-[#C8102E]">IMC • scoring framework</p>
+                <h2 class="mt-1 text-2xl font-bold">Trade Monitoring: Parameters</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="report-table w-full min-w-[680px] border-collapse text-left text-sm">
+                    <thead>
+                        <tr class="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
+                            <th class="border border-slate-200 px-4 py-3">Parameter</th>
+                            <th class="border border-slate-200 px-4 py-3">Criteria</th>
+                            <th class="border border-slate-200 px-4 py-3">Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td rowspan="3" class="border border-slate-200 px-4 py-3 font-bold">Market participation</td><td class="border border-slate-200 px-4 py-3"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-600"></span>Less than 15%</td><td class="border border-slate-200 px-4 py-3 font-semibold">3</td></tr>
+                        <tr><td class="border border-slate-200 px-4 py-3"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-amber-400"></span>15%-30%</td><td class="border border-slate-200 px-4 py-3 font-semibold">2</td></tr>
+                        <tr><td class="border border-slate-200 px-4 py-3"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-rose-600"></span>30%+</td><td class="border border-slate-200 px-4 py-3 font-semibold">1</td></tr>
+                        <tr><td rowspan="2" class="border border-slate-200 px-4 py-3 font-bold">Optimal / sub-optimal</td><td class="border border-slate-200 px-4 py-3"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-emerald-600"></span>Execution price is within range</td><td class="border border-slate-200 px-4 py-3 font-semibold">2</td></tr>
+                        <tr><td class="border border-slate-200 px-4 py-3"><span class="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-rose-600"></span>Execution price violates range</td><td class="border border-slate-200 px-4 py-3 font-semibold">0</td></tr>
+                        <tr><td rowspan="3" class="border border-slate-200 px-4 py-3 font-bold">Stock liquidity performance</td><td class="border border-slate-200 px-4 py-3">Highly Liquid — liquidity ratio &gt; 1.5% of market turnover</td><td class="border border-slate-200 px-4 py-3 font-semibold">3</td></tr>
+                        <tr><td class="border border-slate-200 px-4 py-3">Liquid — liquidity ratio is between 0.5%-1.5% of market turnover</td><td class="border border-slate-200 px-4 py-3 font-semibold">2</td></tr>
+                        <tr><td class="border border-slate-200 px-4 py-3">Illiquid — liquidity ratio &lt; 0.5% of market turnover</td><td class="border border-slate-200 px-4 py-3 font-semibold">1</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4"><p class="text-xs font-bold uppercase text-slate-500">Total score range</p><p class="mt-2 text-lg font-bold">Minimum score: 2 <span class="mx-2 text-slate-300">|</span> Maximum score: 8</p></div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4"><p class="text-xs font-bold uppercase text-slate-500">Liquidity ratio</p><p class="mt-2 text-lg font-bold">Stock average traded value ÷ total index traded value</p></div>
+            </div>
+        </section>
+
+        <section id="overview-panel" class="space-y-5" role="tabpanel">
+            <div id="overview-empty" class="hidden rounded-xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center">
+                <h2 class="text-lg font-bold">No trade data for this selection</h2>
+                <p class="mt-2 text-sm text-slate-500">The selected dates contain no rows in the Trade Risk Analysis sheet. Overview values are nil for this range.</p>
+            </div>
+            <div id="overview-content" class="space-y-5">
+                <div id="metric-cards" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"></div>
+                <div class="grid gap-5 xl:grid-cols-2">
+                    <article class="rounded-xl bg-white p-5 shadow-sm">
+                        <h2 class="text-lg font-bold">Trade Summary</h2>
+                        <p class="mb-4 mt-1 text-sm text-slate-500">Optimal execution and stock liquidity performance</p>
+                        <div id="trade-summary-table"></div>
+                    </article>
+                    <article class="rounded-xl bg-white p-5 shadow-sm">
+                        <h2 class="text-lg font-bold">Market Participation</h2>
+                        <p class="mb-5 mt-1 text-sm text-slate-500">Share of total trading value by participation band</p>
+                        <div id="participation-chart" class="space-y-5" role="img" aria-label="Trading value share by market participation band"></div>
+                    </article>
+                    <article class="rounded-xl bg-white p-5 shadow-sm xl:col-span-2">
+                        <div>
+                            <h2 class="text-lg font-bold">Stock Liquidity Performance</h2>
+                            <p class="mb-5 mt-1 text-sm text-slate-500">Share of total trade value by liquidity category</p>
+                        </div>
+                        <div class="flex flex-col items-center gap-6 sm:flex-row sm:justify-center sm:gap-12">
+                            <div id="liquidity-chart" class="liquidity-donut relative h-52 w-52 shrink-0 rounded-full" role="img" aria-label="Trade value distribution by stock liquidity"></div>
+                            <div id="liquidity-legend" class="w-full max-w-xl space-y-3"></div>
+                        </div>
+                    </article>
+                    <article class="rounded-xl bg-white p-5 shadow-sm xl:col-span-2">
+                        <h2 class="text-lg font-bold">Overall Score</h2>
+                        <p class="mb-4 mt-1 text-sm text-slate-500">Execution count by score</p>
+                        <div id="score-table"></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary-panel" class="hidden rounded-xl bg-white p-4 shadow-sm sm:p-5" role="tabpanel">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <h2 class="text-lg font-bold">Trade Risk Analysis</h2>
+                </div>
+                <p id="summary-count" class="text-sm font-semibold text-slate-600"></p>
+            </div>
+            <div id="summary-empty" class="hidden mb-3 rounded-md bg-amber-50 p-3 text-sm text-amber-900">No records are available for the selected range.</div>
+            <div class="max-h-[70vh] overflow-auto rounded-lg border border-slate-200">
+                <table class="report-table w-full border-collapse text-left text-xs">
+                    <thead id="summary-head" class="bg-slate-100 text-slate-600"></thead>
+                    <tbody id="summary-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const state = { mode: "imc", tab: "overview", data: null, requestId: 0 };
+        const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+            "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[character]);
+        const money = (value) => {
+            if (value == null || !Number.isFinite(Number(value))) return "—";
+            const amount = Number(value);
+            const absoluteAmount = Math.abs(amount);
+            const units = [
+                [1e12, "tn"],
+                [1e9, "bn"],
+                [1e6, "mn"],
+                [1e3, "k"]
+            ];
+            const unit = units.find(([threshold]) => absoluteAmount >= threshold);
+            if (unit) {
+                return `PKR ${new Intl.NumberFormat("en-PK", { maximumFractionDigits: 2 }).format(amount / unit[0])}${unit[1]}`;
+            }
+            return `PKR ${new Intl.NumberFormat("en-PK", { maximumFractionDigits: 2 }).format(amount)}`;
+        };
+        const number = (value) => new Intl.NumberFormat("en-PK").format(Number(value) || 0);
+        const percent = (value) => value == null ? "—" : `${(Number(value) * 100).toFixed(1)}%`;
+        const setStatus = (message, error = false) => {
+            const node = document.getElementById("report-status");
+            node.textContent = message;
+            node.className = `min-h-5 text-sm ${error ? "text-red-700" : "text-slate-600"}`;
+        };
+
+        function makeTable(headers, rows) {
+            const headerHtml = `<thead class="bg-slate-100 text-xs uppercase tracking-wide text-slate-600"><tr>${headers.map((header) => `<th class="border-b border-slate-200 px-3 py-2.5">${escapeHtml(header)}</th>`).join("")}</tr></thead>`;
+            const bodyHtml = rows.length
+                ? `<tbody class="divide-y divide-slate-100">${rows.map((row) => `<tr>${row.map((cell) => `<td class="px-3 py-2.5">${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</tbody>`
+                : `<tbody><tr><td colspan="${headers.length}" class="px-3 py-5 text-center text-slate-500">Nil</td></tr></tbody>`;
+            return `<table class="w-full border-collapse text-left text-sm">${headerHtml}${bodyHtml}</table>`;
+        }
+
+        function renderCards(overview, hasRows) {
+            const items = [
+                ["Total Value Vested", hasRows ? money(overview.total_value_vested) : "Nil", "All executions"],
+                ["Buy Trades", hasRows ? money(overview.buy_value) : "Nil", `${number(overview.buy_executions)} executions`],
+                ["Sell Trades", hasRows ? money(overview.sell_value) : "Nil", `${number(overview.sell_executions)} executions`],
+                ["Total Executions", hasRows ? number(overview.total_executions) : "Nil", "trade records"],
+                ["Optimal Trade Rate", hasRows ? percent(overview.optimal_rate) : "Nil", `Sub-optimal ${hasRows ? percent(overview.suboptimal_rate) : "Nil"}`]
+            ];
+            document.getElementById("metric-cards").innerHTML = items.map(([label, value, note]) =>
+                `<article class="metric-card rounded-xl border border-slate-200 bg-white p-4 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-500">${escapeHtml(label)}</p><p class="mt-3 text-2xl font-bold text-slate-900">${escapeHtml(value)}</p><p class="mt-1 text-xs text-slate-500">${escapeHtml(note)}</p></article>`
+            ).join("");
+        }
+
+        function renderBreakdown(rows) {
+            const headers = ["Category", "Value (PKR)", "Executions", "Value share", "Execution share"];
+            return makeTable(headers, rows.map((row) => [
+                row.label, money(row.value), number(row.count), percent(row.value_percent), percent(row.count_percent)
+            ]));
+        }
+
+        function renderParticipationChart(rows) {
+            const categories = ["30%+", "15%-30%", "Less than 15%"];
+            const orderedRows = categories.map((category) =>
+                rows.find((row) => row.label === category)
+            ).filter(Boolean);
+            const chart = document.getElementById("participation-chart");
+            chart.setAttribute(
+                "aria-label",
+                orderedRows.length
+                    ? `Trading value share by market participation: ${orderedRows.map((row) => `${row.label} ${percent(row.value_percent)}`).join(", ")}`
+                    : "No market participation data for this selection"
+            );
+            if (!orderedRows.length) {
+                chart.innerHTML = `<p class="rounded-lg border border-slate-100 px-4 py-6 text-sm text-slate-500">Nil — no market participation data for this selection.</p>`;
+                return;
+            }
+
+            const axisMaximum = 45;
+            const barColors = ["#c8102e", "#d97706", "#0f766e"];
+            chart.innerHTML = `<div class="space-y-4">${orderedRows.map((row, index) => {
+                const valueShare = Number(row.value_percent || 0) * 100;
+                const barWidth = Math.min(Math.max(valueShare / axisMaximum * 100, 0), 100);
+                return `<div class="grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-3 sm:grid-cols-[8rem_minmax(0,1fr)_4rem]"><div class="text-right text-sm font-semibold text-slate-700">${escapeHtml(row.label)}</div><div class="h-8 overflow-hidden rounded bg-slate-100"><div class="flex h-full items-center rounded px-2 text-xs font-bold text-white" style="width:${barWidth}%;min-width:${valueShare > 0 ? "2rem" : "0"};background-color:${barColors[index] || "#64748b"}"><span>${escapeHtml(percent(row.value_percent))}</span></div></div><div class="text-right text-xs font-semibold text-slate-600">${number(row.count)}</div></div>`;
+            }).join("")}</div><div class="ml-[7.25rem] mr-[3.5rem] mt-2 flex justify-between text-[11px] text-slate-400 sm:ml-[8.75rem] sm:mr-16"><span>0%</span><span>15%</span><span>30%</span><span>45%</span></div><div class="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-500">Bars show share of total trade value • right column shows execution count</div>`;
+        }
+
+        function renderLiquidityChart(rows) {
+            const colors = {
+                "highly liquid": "#0f766e",
+                "liquid": "#d97706",
+                "illiquid": "#be123c"
+            };
+            const orderedRows = ["Highly Liquid", "Liquid", "Illiquid"].map((category) =>
+                rows.find((row) => row.label.toLowerCase() === category.toLowerCase())
+            ).filter(Boolean);
+            const totalValue = orderedRows.reduce((total, row) => total + Number(row.value || 0), 0);
+            let angle = 0;
+            const segments = orderedRows.map((row) => {
+                const share = totalValue > 0 ? Number(row.value || 0) / totalValue : 0;
+                const start = angle;
+                angle += share * 360;
+                return { ...row, share, start, end: angle, color: colors[row.label.toLowerCase()] || "#64748b" };
+            });
+            const background = segments.length && totalValue > 0
+                ? `conic-gradient(${segments.map((segment) => `${segment.color} ${segment.start}deg ${segment.end}deg`).join(", ")})`
+                : "conic-gradient(#e2e8f0 0deg 360deg)";
+            const chart = document.getElementById("liquidity-chart");
+            chart.style.background = background;
+            chart.setAttribute(
+                "aria-label",
+                segments.length && totalValue > 0
+                    ? `Stock liquidity trade value: ${segments.map((segment) => `${segment.label} ${percent(segment.share)}`).join(", ")}`
+                    : "No stock liquidity data for this selection"
+            );
+            chart.innerHTML = `<div class="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center shadow-inner"><span class="text-xs font-bold uppercase tracking-wide text-slate-500">Total value</span><span class="mt-1 px-2 text-lg font-bold text-slate-900">${totalValue > 0 ? escapeHtml(money(totalValue)) : "Nil"}</span></div>`;
+            document.getElementById("liquidity-legend").innerHTML = segments.length
+                ? segments.map((segment) => `<div class="flex items-start justify-between gap-4 rounded-lg border border-slate-100 px-4 py-3"><div class="flex items-center gap-3"><span class="mt-0.5 h-3 w-3 shrink-0 rounded-full" style="background-color:${segment.color}"></span><div><p class="font-semibold text-slate-800">${escapeHtml(segment.label)}</p><p class="mt-0.5 text-xs text-slate-500">${number(segment.count)} executions</p></div></div><div class="text-right"><p class="font-bold text-slate-900">${escapeHtml(percent(segment.share))}</p><p class="mt-0.5 text-xs text-slate-500">${escapeHtml(money(segment.value))}</p></div></div>`).join("")
+                : `<p class="rounded-lg border border-slate-100 px-4 py-5 text-sm text-slate-500">Nil — no liquidity data for this selection.</p>`;
+        }
+
+        function renderOverview(data) {
+            const overview = data.overview;
+            const hasRows = data.rows.length > 0;
+            const emptyPanel = document.getElementById("overview-empty");
+            emptyPanel.querySelector("h2").textContent = "No trade data for this selection";
+            emptyPanel.querySelector("p").textContent = "The selected dates contain no rows in the Trade Risk Analysis sheet. Overview values are nil for this range.";
+            emptyPanel.classList.toggle("hidden", hasRows);
+            renderCards(overview, hasRows);
+            document.getElementById("trade-summary-table").innerHTML = renderBreakdown([
+                ...overview.optimal_summary,
+                ...overview.stock_performance
+            ]);
+            renderParticipationChart(hasRows ? overview.market_participation : []);
+            renderLiquidityChart(hasRows ? overview.stock_performance : []);
+            document.getElementById("score-table").innerHTML = makeTable(
+                ["Overall Score", "No. of Transactions"],
+                overview.score_distribution.map((row) => [row.score, number(row.count)])
+            );
+        }
+
+        function renderSummary(data) {
+            const head = document.getElementById("summary-head");
+            const body = document.getElementById("summary-body");
+            head.innerHTML = `<tr>${data.headers.map((header) => `<th class="border-b border-slate-200 px-3 py-3">${escapeHtml(header)}</th>`).join("")}</tr>`;
+            body.innerHTML = data.rows.map((row) =>
+                `<tr class="odd:bg-white even:bg-slate-50">${data.headers.map((header) => `<td class="px-3 py-2.5">${escapeHtml(row[header] ?? "—")}</td>`).join("")}</tr>`
+            ).join("");
+            document.getElementById("summary-empty").classList.toggle("hidden", data.rows.length > 0);
+            document.getElementById("summary-count").textContent = `${number(data.rows.length)} executions`;
+        }
+
+        function updateStatus(data) {
+            if (data.rows.length) {
+                const period = state.mode === "imc"
+                    ? `${data.from_date} to ${data.to_date}`
+                    : `year to date through ${data.as_of_date}`;
+                setStatus(`${state.mode === "imc" ? "IMC" : "CY-2026"} • ${period} • ${number(data.rows.length)} executions`);
+            } else {
+                setStatus(`${state.mode === "imc" ? "IMC" : "CY-2026"} • No trades in the selected period • Nil`);
+            }
+        }
+
+        async function loadData() {
+            const requestId = ++state.requestId;
+            if (state.tab === "parameters") {
+                setStatus("IMC scoring parameters.");
+                return;
+            }
+            setStatus("Loading Trade Monitoring data…");
+            const query = new URLSearchParams({ mode: state.mode });
+            if (state.mode === "imc") {
+                const from = document.getElementById("from-date").value;
+                const to = document.getElementById("to-date").value;
+                if (from) query.set("from_date", from);
+                if (to) query.set("to_date", to);
+            }
+            try {
+                const response = await fetch(`/api/trade-monitoring?${query.toString()}`);
+                const payload = await response.json();
+                if (requestId !== state.requestId) return;
+                if (!response.ok) throw new Error(payload.detail || "Unable to load Trade Monitoring data.");
+                state.data = payload;
+                if (state.mode === "imc") {
+                    const fromInput = document.getElementById("from-date");
+                    const toInput = document.getElementById("to-date");
+                    if (!fromInput.value) fromInput.value = payload.available_from;
+                    if (!toInput.value) toInput.value = payload.available_to;
+                }
+                renderOverview(payload);
+                renderSummary(payload);
+                updateStatus(payload);
+            } catch (error) {
+                if (requestId !== state.requestId) return;
+                setStatus(error.message, true);
+                document.getElementById("overview-content").classList.add("hidden");
+                document.getElementById("overview-empty").classList.remove("hidden");
+                document.getElementById("overview-empty").querySelector("h2").textContent = "Trade Monitoring data could not be loaded";
+                document.getElementById("overview-empty").querySelector("p").textContent = error.message;
+                document.getElementById("summary-head").innerHTML = "";
+                document.getElementById("summary-body").innerHTML = "";
+            }
+        }
+
+        function setMode(mode) {
+            state.mode = mode;
+            state.tab = "overview";
+            document.getElementById("mode-imc").setAttribute("aria-pressed", String(mode === "imc"));
+            document.getElementById("mode-cy").setAttribute("aria-pressed", String(mode === "cy-2026"));
+            document.getElementById("imc-date-panel").classList.toggle("hidden", mode !== "imc");
+            document.querySelector('[data-tab="parameters"]').classList.toggle("hidden", mode !== "imc");
+            selectTab("overview");
+        }
+
+        function selectTab(tab) {
+            state.tab = tab;
+            document.querySelectorAll(".tab-button").forEach((button) => {
+                const selected = button.dataset.tab === tab;
+                button.setAttribute("aria-selected", String(selected));
+                button.classList.toggle("hidden", state.mode === "cy-2026" && button.dataset.tab === "parameters");
+            });
+            document.getElementById("parameters-panel").classList.toggle("hidden", tab !== "parameters");
+            document.getElementById("overview-panel").classList.toggle("hidden", tab !== "overview");
+            document.getElementById("summary-panel").classList.toggle("hidden", tab !== "summary");
+            loadData();
+        }
+
+        document.getElementById("mode-imc").addEventListener("click", () => setMode("imc"));
+        document.getElementById("mode-cy").addEventListener("click", () => setMode("cy-2026"));
+        document.querySelectorAll(".tab-button").forEach((button) =>
+            button.addEventListener("click", () => selectTab(button.dataset.tab))
+        );
+        document.getElementById("date-filter").addEventListener("submit", (event) => {
+            event.preventDefault();
+            const from = document.getElementById("from-date").value;
+            const to = document.getElementById("to-date").value;
+            if (from && to && from > to) {
+                setStatus("From date must not be after To date.", true);
+                return;
+            }
+            loadData();
+        });
+
+        loadData();
+    </script>
+</body>
+</html>

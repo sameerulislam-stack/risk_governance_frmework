@@ -1,0 +1,17 @@
+import sqlite3, os
+os.makedirs('data', exist_ok=True)
+conn = sqlite3.connect('data/risk.db')
+cursor = conn.cursor()
+cursor.execute('CREATE TABLE IF NOT EXISTS governance_metrics (category TEXT, sub_category TEXT, metric_value REAL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_portfolio_history (fund_name TEXT, date DATE, price REAL, scrip_code TEXT)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_scrip_price_history (date DATE, scrip_code TEXT, price REAL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_portfolio_weights (fund_name TEXT, date DATE, scrip_code TEXT, holding REAL, price REAL, market_value REAL, portfolio_weight REAL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_liquidity_basket (fund_name TEXT, category TEXT, value REAL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_scrip_volume_history (date DATE, scrip_code TEXT, volume REAL)')
+cursor.execute('CREATE TABLE IF NOT EXISTS dim_security_metadata (scrip_code TEXT, sector TEXT, free_float_pct REAL, market_cap_band TEXT)')
+cursor.execute('CREATE TABLE IF NOT EXISTS fact_portfolio_security_profile (fund_name TEXT, scrip_code TEXT, risk_level TEXT, liquidity_basket TEXT)')
+data = [('MARKET & LIQUIDITY RISK', '1. RISK LIMITS (FUND WISE )', 95.5)]
+cursor.executemany("INSERT OR IGNORE INTO governance_metrics VALUES (?,?,?)", data)
+conn.commit()
+conn.close()
+print("Database ready.")
